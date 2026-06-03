@@ -1,21 +1,25 @@
 import json
 import re
+import asyncio
 from ast import literal_eval
 from loguru import logger
 
+import agentspeak as asp
 from spade_artifact import ArtifactMixin
+from spade_artifact.artifact_ext import ArtifactActuatorMixin
 
 
 _FUNCTOR_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _LITERAL_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:\((.*)\))?\s*$")
 
 
-class ArtifactBDIMixin(ArtifactMixin):
+class ArtifactBDIMixin(ArtifactActuatorMixin, ArtifactMixin):
     """
-    Mixin that mirrors artifact publications into BDI beliefs.
+    Mixin that mirrors artifact publications into BDI beliefs and
+    provides the .use internal action to interact with artifacts.
 
-    Use it before `BDIAgent` in the MRO, together with `ArtifactMixin`:
-        class MyAgent(ArtifactBDIMixin, ArtifactMixin, BDIAgent):
+    Use it before `BDIAgent` in the MRO:
+        class MyAgent(ArtifactBDIMixin, BDIAgent):
             ...
     """
 
@@ -46,6 +50,27 @@ class ArtifactBDIMixin(ArtifactMixin):
 
         self.artifacts.focus = _focus_with_bridge
         self._bdi_artifact_focus_wrapped = True
+
+    def add_custom_actions(self, actions):
+        super().add_custom_actions(actions)
+
+        @actions.add(".use", None)
+        def _use(agent, term, intention):
+            jid = str(asp.grounded(term.args[0], intention.scope))
+            op = str(asp.grounded(term.args[1], intention.scope))
+            op_args = tuple(asp.grounded(arg, intention.scope) for arg in term.args[2:])
+
+            coro = self.artifacts.use(jid, op, *op_args)
+            if hasattr(self, "loop") and self.loop is not None:
+                self.loop.create_task(coro)
+            else:
+                try:
+                    loop = asyncio.get_running_loop()
+                    loop.create_task(coro)
+                except RuntimeError:
+                    # Fallback for sync contexts (like old tests)
+                    asyncio.ensure_future(coro)
+            yield
 
     def _on_artifact_publication(self, artifact_jid, payload):
         """Default callback that converts payloads to BDI beliefs."""

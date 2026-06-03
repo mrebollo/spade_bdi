@@ -32,9 +32,13 @@ class ObserverAgent(ArtifactBDIMixin, BDIAgent):
             print(f"[observer] payload.metadata: {getattr(payload, 'metadata')}")
 
 
+import os
+
+
 async def main():
     sensor = SensorArtifact("sensor@localhost", "1234")
-    observer = ObserverAgent("observer@localhost", "1234", "observer.asl")
+    asl_path = os.path.join(os.path.dirname(__file__), "observer.asl")
+    observer = ObserverAgent("observer@localhost", "1234", asl_path)
 
     await sensor.start()
     await observer.start()
