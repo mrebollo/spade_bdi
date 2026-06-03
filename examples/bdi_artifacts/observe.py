@@ -20,7 +20,7 @@ class SensorArtifact(Artifact):
             await asyncio.sleep(1)
 
 
-class ObserverAgent(ArtifactMixin, BDIAgent):
+class ObserverAgent(ArtifactBDIMixin, BDIAgent):
     async def setup(self):
         await super().setup()
         await self.artifacts.focus("sensor@localhost", self.on_sensor_update)
