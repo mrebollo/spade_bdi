@@ -77,3 +77,19 @@ class MiAgenteBDI(ArtifactBDIMixin, BDIAgent):
   2. **Fase Posterior (Opción B - Jerarquía de Nodos):** Evolucionar hacia un esquema donde el artefacto cree subnodos PubSub dinámicos por propiedad observable (ej: `sensor@localhost/temperature`). De este modo, la red solo transmitirá aquello a lo que el agente BDI se suscriba explícitamente.
   
   *Nota de diseño:* Se valora positivamente que ambas opciones limiten el alcance de los cambios al ámbito de BDI y la extensión de artefactos, simplificando la arquitectura general del sistema.
+
+* **Base de comunicación alternativa (`spade_rpc`):**
+  Se anota la posibilidad de emplear la extensión `spade_rpc` (basada en el estándar XEP-009 Jabber RPC) para sustituir el paso de mensajes personalizados al invocar operaciones sobre artefactos (`use`).
+  * *Ventajas clave:*
+    1. **Retorno de valores bidireccional:** Permite que las operaciones devuelvan valores directamente al agente en la llamada, en lugar de depender únicamente de PubSub.
+    2. **Propagación de excepciones:** Si una operación falla en el artefacto, la excepción se lanza en el agente BDI, permitiendo que el plan falle de forma nativa en AgentSpeak.
+    3. **Simplificación interna:** El artefacto delega el despacho directamente al servidor RPC de `aioxmpp`, eliminando la necesidad de un bucle de escucha explícito.
+
+* **Priorización de Tareas de Diseño (RPC vs. Filtrado y Origen de Creencias):**
+  Al planificar el siguiente bloque de desarrollo, se establece el siguiente orden de preferencia:
+  1. **Prioridad 1: Filtrado de Datos (`focus` selectivo) y Origen de Creencias (Source-Aware Naming):**
+     * *Razón:* Afecta directamente al comportamiento semántico del motor BDI y a su escalabilidad. Limitar qué creencias recibe el agente evita saturar el motor, y mapear las creencias con el nombre completo/JID del artefacto (ej. `status("door1@localhost", unlocked)`) es crítico cuando un agente observa múltiples artefactos del mismo tipo.
+  2. **Prioridad 2: Migración a RPC (`spade_rpc`):**
+     * *Razón:* Aunque es una mejora técnica excelente para la fiabilidad de la red, es una optimización de infraestructura de comunicación que no altera la lógica cognitiva y semántica del agente BDI a nivel del lenguaje de AgentSpeak. Por tanto, se abordará en una fase posterior.
+
+
