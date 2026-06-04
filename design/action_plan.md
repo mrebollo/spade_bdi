@@ -68,4 +68,12 @@ class MiAgenteBDI(ArtifactBDIMixin, BDIAgent):
 ---
 
 ## 🔮 Mejoras y Consideraciones Futuras
-* **Selección / Filtrado de Propiedades Observadas:** Actualmente, la suscripción (`focus`) a un artefacto suscribe al agente al nodo PubSub completo del artefacto, lo que implica recibir todos sus cambios y publicaciones. En el futuro, se podría diseñar un mecanismo para que el agente indique una selección específica de datos a los que suscribirse (por ejemplo, mediante subnodos o filtrado a nivel de payload). No obstante, esto requeriría modificar el esquema de información de los nodos PubSub de `spade_artifact`, lo cual podría complicar la conformidad con el estándar XMPP actual, por lo que queda agendado para un análisis posterior.
+* **Selección / Filtrado de Propiedades Observadas:** Actualmente, la suscripción (`focus`) a un artefacto suscribe al agente al nodo PubSub completo de ese artefacto, haciendo que reciba todas las notificaciones publicadas. Para mitigar esto, se ha acordado la siguiente estrategia incremental:
+  1. **Fase Inicial (Opción A - Filtrado en el Agente):** Implementar un filtrado en memoria dentro de `ArtifactBDIMixin` usando una lista de functors específicos de interés:
+     ```python
+     await self.artifacts.focus("sensor@localhost", callback, select=["status", "temperature"])
+     ```
+     Esta opción se prefiere sobre los templates nativos de SPADE, ya que las notificaciones de PubSub puentean los buzones normales de comportamientos. Permite una implementación muy simple y rápida sin modificar la capa de red.
+  2. **Fase Posterior (Opción B - Jerarquía de Nodos):** Evolucionar hacia un esquema donde el artefacto cree subnodos PubSub dinámicos por propiedad observable (ej: `sensor@localhost/temperature`). De este modo, la red solo transmitirá aquello a lo que el agente BDI se suscriba explícitamente.
+  
+  *Nota de diseño:* Se valora positivamente que ambas opciones limiten el alcance de los cambios al ámbito de BDI y la extensión de artefactos, simplificando la arquitectura general del sistema.
