@@ -64,3 +64,8 @@ class MiAgenteBDI(ArtifactBDIMixin, BDIAgent):
 ## 🧪 Estrategia de Pruebas
 1. **Test de Creencias (Fase 1):** Crear un artefacto simple de contador y un agente BDI. El agente enfoca el contador. Al incrementarse el contador, verificar que en el plan de AgentSpeak se gatilla una regla `+count(X)` de manera automática.
 2. **Test de Acción (Fase 2):** Verificar que un plan del agente que ejecuta `.use` interactúa y modifica de manera efectiva el estado del artefacto remoto.
+
+---
+
+## 🔮 Mejoras y Consideraciones Futuras
+* **Selección / Filtrado de Propiedades Observadas:** Actualmente, la suscripción (`focus`) a un artefacto suscribe al agente al nodo PubSub completo del artefacto, lo que implica recibir todos sus cambios y publicaciones. En el futuro, se podría diseñar un mecanismo para que el agente indique una selección específica de datos a los que suscribirse (por ejemplo, mediante subnodos o filtrado a nivel de payload). No obstante, esto requeriría modificar el esquema de información de los nodos PubSub de `spade_artifact`, lo cual podría complicar la conformidad con el estándar XMPP actual, por lo que queda agendado para un análisis posterior.
